@@ -467,8 +467,9 @@ ev_window_setup_action_sensitivity (EvWindow *ev_window)
 	ev_window_set_action_sensitive (ev_window, "FileOpenContainingFolder", has_document);
 	ev_window_set_action_sensitive (ev_window, "FileSendTo", has_document);
 	ev_window_set_action_sensitive (ev_window, "ViewPresentation", has_document);
+    ev_window_set_action_sensitive (ev_window, "WordCount", has_document);
 
-        /* Edit menu */
+    /* Edit menu */
 	ev_window_set_action_sensitive (ev_window, "EditSelectAll", has_pages && can_get_text);
 	ev_window_set_action_sensitive (ev_window, "EditFind", can_find);
 	ev_window_set_action_sensitive (ev_window, "Slash", can_find);
@@ -3088,6 +3089,57 @@ ev_window_cmd_open_containing_folder (GtkAction *action, EvWindow *ev_window)
 		g_object_unref (parent);
 	
 }
+
+/* Count Words of the PFD File */
+static void
+ev_window_cmd_count_words (GtkAction *action, EvWindow *ev_window) {
+
+    GtkWidget *dialog;
+
+    int NUM_WORDS_LEN = 15;
+
+    FILE *fp;
+    char number_of_words[NUM_WORDS_LEN];
+
+    int COMMAND_LEN = sizeof(ev_window->priv->uri) + 100;
+
+    char cmd[COMMAND_LEN];
+    sprintf(cmd, "pdftotext %s - | tr -d '.' | wc -w", ev_window->priv->uri);
+
+    fp = popen(cmd, "r");
+
+    if (fp == NULL) {    
+        ev_window_error_message (ev_window, NULL, _("Counting words failed"));
+    }
+
+    else {
+      
+        while(fgets(number_of_words, NUM_WORDS_LEN, fp) != NULL){
+            /* Filling number_of_words */            
+        }
+
+        char mesg[40];
+        
+        strcpy(mesg, number_of_words);
+        strcat(mesg, " words!");
+
+        dialog = gtk_message_dialog_new (GTK_WINDOW (ev_window),
+                                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                                         GTK_MESSAGE_INFO,
+                                         GTK_BUTTONS_CLOSE,
+                                         "%s", _(mesg));
+        
+        g_signal_connect (dialog, "response",
+                         G_CALLBACK (gtk_widget_destroy),
+                         NULL);
+
+        gtk_widget_show (dialog);
+
+    }
+
+}
+
+
 
 static GKeyFile *
 get_print_settings_file (void)
@@ -6026,10 +6078,16 @@ static const GtkActionEntry entries[] = {
 	{ "FileSendTo", EV_STOCK_SEND_TO, N_("Send _To…"), NULL,
 	  N_("Send current document by mail, instant message…"),
 	  G_CALLBACK (ev_window_cmd_send_to) },
-	{ "FileOpenContainingFolder", GTK_STOCK_DIRECTORY, N_("Open Containing _Folder"), NULL,
+	{ "FileOpenContainingFolder", GTK_STOCK_DIRECTORY, N_("Open Containing _Folder now!"), NULL,
 	  N_("Show the folder which contains this file in the file manager"),
 	  G_CALLBACK (ev_window_cmd_open_containing_folder) },
-	{ "FilePrint", GTK_STOCK_PRINT, N_("_Print…"), "<control>P",
+	
+    /* Word Count */
+    { "WordCount", GTK_MESSAGE_INFO, N_("Count Words"), NULL,
+	  N_("Counts the words of this PDF"),
+	  G_CALLBACK (ev_window_cmd_count_words) },
+	   
+    { "FilePrint", GTK_STOCK_PRINT, N_("_Print…"), "<control>P",
 	  N_("Print this document"),
 	  G_CALLBACK (ev_window_cmd_file_print) },
 	{ "FileProperties", GTK_STOCK_PROPERTIES, N_("P_roperties"), "<alt>Return", NULL,
@@ -6381,6 +6439,10 @@ set_action_properties (GtkActionGroup *action_group)
 	action = gtk_action_group_get_action (action_group, "FileOpenContainingFolder");
 	/*translators: this is the label for toolbar button*/
 	g_object_set (action, "short_label", _("Open Folder"), NULL);
+
+    /* Word Count Action */
+    action = gtk_action_group_get_action (action_group, "WordCount");
+    g_object_set (action, "short_label", _("Count Words"), NULL);
 
 	action = gtk_action_group_get_action (action_group, "FileSendTo");
 	/*translators: this is the label for toolbar button*/
