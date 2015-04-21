@@ -73,6 +73,8 @@
     <separator/>
     <menuitem name="AnnotProperties" action="AnnotProperties"/>
     <menuitem name="FileOpenContainingFolder" action="FileOpenContainingFolder"/>
+    <separator/>
+    <menuitem name="WordCount" action="WordCount"/>
   </popup>
 
   <popup name="AttachmentPopup" action="AttachmentPopupAction">
